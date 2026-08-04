@@ -1,0 +1,9 @@
+# Use this workspace to collaborate
+workspace:
+  id: ec40567e-6c31-43ce-8793-662ee21feef6
+
+localResources:
+  collections:
+    - ..\Nexsol_Travel_API.postman_collection.json
+  environments:
+    - ..\Nexsol_Travel_Local.postman_environment.json

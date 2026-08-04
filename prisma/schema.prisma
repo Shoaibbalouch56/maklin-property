@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Property listing matching realtor-complete-response.json shape.
+/// Nested realtor objects are stored as JSON; scalar listing fields are columns.
+model Property {
+  id String @id @default(cuid())
+
+  // --- Scalar fields from realtor JSON ---
+  listingId          String?   @unique @map("listing_id")
+  propertyId         String?   @map("property_id")
+  permalink          String?
+  status             String? // for_rent | for_sale | sold | draft | active
+  listPrice          Float?    @map("list_price")
+  listPriceMax       Json?     @map("list_price_max")
+  listPriceMin       Json?     @map("list_price_min")
+  listDate           DateTime? @map("list_date")
+  priceReducedAmount Json?     @map("price_reduced_amount")
+  applicationUrl     Json?     @map("application_url")
+  hasSpecials        Json?     @map("has_specials")
+  matterport         Json?
+  searchPromotions   Json?     @map("search_promotions")
+  units              Json?
+  virtualTours       Json?     @map("virtual_tours")
+
+  // --- Nested realtor objects (full JSON) ---
+  advertisers    Json?
+  branding       Json?
+  description    Json? // beds, baths_consolidated, sqft, type, year_built, name, ...
+  details        Json? // category / parent_category / text[]
+  flags          Json?
+  leadAttributes Json? @map("lead_attributes")
+  location       Json? // address + county
+  otherListings  Json? @map("other_listings")
+  petPolicy      Json? @map("pet_policy")
+  photos         Json? // [{ href }]
+  primaryPhoto   Json? @map("primary_photo") // { href }
+  products       Json?
+  source         Json?
+
+  // --- Admin-managed fields ---
+  isFeatured     Boolean  @default(false) @map("is_featured")
+  uploadedImages String[] @default([]) @map("uploaded_images")
+  notes          String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([isFeatured])
+  @@index([listPrice])
+  @@map("properties")
+}
