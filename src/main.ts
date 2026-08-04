@@ -1,12 +1,43 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger = new Logger('Bootstrap');
+  const databaseUrl = process.env.DATABASE_URL || '';
+
+  if (!databaseUrl) {
+    throw new Error(
+      'DATABASE_URL is not set. Add it in Render Environment settings.',
+    );
+  }
+
+  try {
+    const host = new URL(databaseUrl).hostname;
+    logger.log(`Using database host: ${host}`);
+    const onRender = process.env.RENDER === 'true';
+    if (onRender && (host === 'localhost' || host === '127.0.0.1')) {
+      throw new Error(
+        'DATABASE_URL uses localhost. On Render you must use Render Postgres Internal URL.',
+      );
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('DATABASE_URL')) {
+      throw error;
+    }
+    if (error instanceof Error && error.message.includes('localhost')) {
+      throw error;
+    }
+    throw new Error('DATABASE_URL is invalid.');
+  }
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -48,10 +79,9 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = Number(process.env.PORT) || 3000;
-  // Render requires binding 0.0.0.0 (not only localhost)
   await app.listen(port, '0.0.0.0');
-  console.log(`Maklin Admin API running on port ${port}`);
-  console.log(`Swagger docs: /api`);
+  logger.log(`Maklin Admin API running on 0.0.0.0:${port}`);
+  logger.log('Swagger docs: /api');
 }
 
 bootstrap().catch((err) => {

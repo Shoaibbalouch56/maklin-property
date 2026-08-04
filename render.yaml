@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: maklin-property
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: maklin-db
+          property: connectionString
+      - key: ADMIN_SECRET
+        sync: false
+
+databases:
+  - name: maklin-db
+    plan: free
+    databaseName: maklin
