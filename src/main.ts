@@ -3,20 +3,9 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { execSync } from 'child_process';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  if (process.env.DATABASE_URL) {
-    try {
-      execSync('npx prisma db push --accept-data-loss --skip-generate', {
-        stdio: 'ignore',
-      });
-    } catch (e) {
-      console.error('Database sync failed:', e);
-    }
-  }
-
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.useGlobalPipes(
@@ -58,10 +47,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`Maklin Admin API running on http://localhost:${port}`);
-  console.log(`Swagger docs: http://localhost:${port}/api`);
+  const port = Number(process.env.PORT) || 3000;
+  // Render requires binding 0.0.0.0 (not only localhost)
+  await app.listen(port, '0.0.0.0');
+  console.log(`Maklin Admin API running on port ${port}`);
+  console.log(`Swagger docs: /api`);
 }
 
 bootstrap().catch((err) => {
