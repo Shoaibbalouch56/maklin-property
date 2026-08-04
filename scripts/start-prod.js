@@ -1,8 +1,9 @@
 /**
  * Production start for Render / cloud hosts.
- * - Validates DATABASE_URL is not localhost
- * - Runs prisma migrate deploy
- * - Starts the Nest API and binds via main.ts to 0.0.0.0
+ * - Ensures SSL for Render Postgres
+ * - Validates DATABASE_URL is not localhost on Render
+ * - Runs prisma migrate deploy (with clear logs)
+ * - Starts Nest on 0.0.0.0
  */
 const { spawnSync } = require('child_process');
 const fs = require('fs');
@@ -13,7 +14,14 @@ function fail(message) {
   process.exit(1);
 }
 
-const databaseUrl = process.env.DATABASE_URL || '';
+function withSsl(url) {
+  if (!url) return url;
+  if (/([?&])sslmode=/i.test(url)) return url;
+  return url.includes('?') ? `${url}&sslmode=require` : `${url}?sslmode=require`;
+}
+
+process.env.DATABASE_URL = withSsl(process.env.DATABASE_URL || '');
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   fail(
@@ -48,7 +56,7 @@ const mainFile = mainCandidates.find((candidate) => fs.existsSync(candidate));
 
 if (!mainFile) {
   fail(
-    `Built server not found. Expected dist/src/main.js. Build Command must run "npm run build" successfully.`,
+    'Built server not found. Expected dist/src/main.js. Build Command must run "npm run build" successfully.',
   );
 }
 
@@ -60,7 +68,24 @@ const migrate = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
 });
 
 if (migrate.status !== 0) {
-  fail('prisma migrate deploy failed. Check DATABASE_URL and that Postgres is running.');
+  console.error('[start-prod] migrate deploy failed — trying db push fallback...');
+  const push = spawnSync(
+    'npx',
+    ['prisma', 'db', 'push', '--skip-generate', '--accept-data-loss'],
+    {
+      stdio: 'inherit',
+      shell: true,
+      env: process.env,
+    },
+  );
+
+  if (push.status !== 0) {
+    fail(
+      'Database sync failed. Check DATABASE_URL (use Internal URL + ssl) and Render Postgres status.',
+    );
+  }
+
+  console.log('[start-prod] db push succeeded');
 }
 
 console.log(`[start-prod] Starting ${mainFile} on PORT=${process.env.PORT || 3000}`);

@@ -1,6 +1,3 @@
-﻿-- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateTable
 CREATE TABLE "properties" (
     "id" TEXT NOT NULL,
@@ -52,4 +49,3 @@ CREATE INDEX "properties_is_featured_idx" ON "properties"("is_featured");
 
 -- CreateIndex
 CREATE INDEX "properties_list_price_idx" ON "properties"("list_price");
-
