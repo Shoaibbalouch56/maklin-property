@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PropertiesModule } from './properties/properties.module';
 import { AdminAuthModule } from './admin-auth/admin-auth.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AdminAuthModule } from './admin-auth/admin-auth.module';
     PrismaModule,
     PropertiesModule,
     AdminAuthModule,
+    SubmissionsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -57,3 +57,31 @@ model Property {
   @@index([listPrice])
   @@map("properties")
 }
+
+/// Website contact / inquiry form submissions shown in admin Messages.
+model FormSubmission {
+  id String @id @default(cuid())
+
+  formType String @map("form_type") // contact | inquiry
+  status   String @default("new") // new | read | replied
+
+  fullName String @map("full_name")
+  email    String
+  phone    String?
+
+  subject String
+  message String @db.Text
+
+  propertyType      String? @map("property_type")
+  preferredLocation String? @map("preferred_location")
+  estimatedBudget   String? @map("estimated_budget")
+  preferredTimeline String? @map("preferred_timeline")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([formType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("form_submissions")
+}
